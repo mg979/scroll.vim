@@ -19,17 +19,17 @@ if !exists('g:scroll_smoothness')
   let g:scroll_smoothness = 5
 endif
 
-nnoremap <Plug>(scroll-page-up)    :<c-u>call scroll#page(1, v:count)<cr>
-nnoremap <Plug>(scroll-mult-up)    :<c-u>call scroll#mult(1, v:count)<cr>
-nnoremap <Plug>(scroll-half-up)    :<c-u>call scroll#half(1, v:count)<cr>
-nnoremap <Plug>(scroll-mark-up)    :<c-u>call scroll#mark(1)<cr>
-nnoremap <Plug>(scroll-reset-up)   :<c-u>call scroll#reset(1)<cr>
+nnoremap <Plug>(scroll-page-up)    :<c-u>call scroll#page(1, v:count)<cr>z.
+nnoremap <Plug>(scroll-mult-up)    :<c-u>call scroll#mult(1, v:count)<cr>z.
+nnoremap <Plug>(scroll-half-up)    :<c-u>call scroll#half(1, v:count)<cr>z.
+nnoremap <Plug>(scroll-mark-up)    :<c-u>call scroll#mark(1)<cr>z.
+nnoremap <Plug>(scroll-reset-up)   :<c-u>call scroll#reset(1)<cr>z.
 
-nnoremap <Plug>(scroll-page-down)  :<c-u>call scroll#page(0, v:count)<cr>
-nnoremap <Plug>(scroll-mult-down)  :<c-u>call scroll#mult(0, v:count)<cr>
-nnoremap <Plug>(scroll-half-down)  :<c-u>call scroll#half(0, v:count)<cr>
-nnoremap <Plug>(scroll-mark-down)  :<c-u>call scroll#mark(0)<cr>
-nnoremap <Plug>(scroll-reset-down) :<c-u>call scroll#reset(0)<cr>
+nnoremap <Plug>(scroll-page-down)  :<c-u>call scroll#page(0, v:count)<cr>z.
+nnoremap <Plug>(scroll-mult-down)  :<c-u>call scroll#mult(0, v:count)<cr>z.
+nnoremap <Plug>(scroll-half-down)  :<c-u>call scroll#half(0, v:count)<cr>z.
+nnoremap <Plug>(scroll-mark-down)  :<c-u>call scroll#mark(0)<cr>z.
+nnoremap <Plug>(scroll-reset-down) :<c-u>call scroll#reset(0)<cr>z.
 
 if !exists('g:scroll_no_mappings')
   " scroll up
