@@ -154,6 +154,9 @@ fun! s:scroll(up, mult)
     exe "normal! " . adjust . (a:up ? "gj" : "gk")
     redraw
   endif
+  if get(g:, 'scroll_center_after', 0)
+    normal! z.
+  endif
 endf
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
