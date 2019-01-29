@@ -11,7 +11,11 @@ fun! scroll#page(up, count)
   if g:smooth_scroll
     let old_scroll = &scroll
     let &scroll = g:default_scroll
-    call s:scroll(a:up, 2)
+    if a:up
+      call s:scroll_up(2)
+    else
+      call s:scroll_down(2)
+    endif
     let &scroll = old_scroll
   else
     exe "normal!" a:up ? "\<C-B>" : "\<C-F>"
@@ -28,8 +32,10 @@ fun! scroll#half(up, count)
 
   if !g:smooth_scroll
     exe "normal!" a:up ? "\<C-U>" : "\<C-D>"
+  elseif a:up
+    call s:scroll_up(1)
   else
-    call s:scroll(a:up, 1)
+    call s:scroll_down(1)
   endif
 
   if a:count | echo "'scroll' set to" &scroll | endif
@@ -41,7 +47,11 @@ endfun
 
 fun! scroll#mark(up)
   k`
-  call s:scroll(a:up, 2)
+  if a:up
+    call s:scroll_up(2)
+  else
+    call s:scroll_down(2)
+  endif
 endfun
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -52,7 +62,11 @@ endfun
 fun! scroll#reset(up)
   let &scroll = g:default_scroll
   let s:mult = 2
-  call s:scroll(a:up, 2)
+  if a:up
+    call s:scroll_up(2)
+  else
+    call s:scroll_down(2)
+  endif
   echo "'scroll' reset to" &scroll
 endfun
 
@@ -69,7 +83,11 @@ fun! scroll#mult(up, count)
     let n = a:count > 0 ? a:count : ''
     exe "normal!" a:up ? n."\<C-B>" : n."\<C-F>"
   else
-    call s:scroll(a:up, s:mult)
+    if a:up
+      call s:scroll_up(s:mult)
+    else
+      call s:scroll_down(s:mult)
+    endif
   endif
 endfun
 
@@ -106,58 +124,99 @@ endfun
 " with the variable 'adjust': because we can't shorten the loop, we're going
 " to get back those lines at the end of the loop.
 
-fun! s:scroll(up, mult)
-  let cmd = a:up ? "gk" : "gj"
+let s:can_see_BOF    = { -> line('.') <= winline() }
+let s:can_see_EOF    = { -> ( winheight(0) - winline() + line('.') ) >= line('$') }
+let s:is_at_bottom   = { -> winline() == winheight(0) - &scrolloff }
+let s:is_at_top      = { -> winline() == 1 + &scrolloff }
+
+fun! s:scroll_up(mult)
+  " scroll fast, only slow down near the end
   let lns = &scroll * a:mult
-  let adjust = 0
-  for i in range(lns)
-    let remaining_lines = ( lns - i )
-    if a:up
-      if ( line('.') - winline() ) <= 0
-        " can see the top of the file, don't scroll, just move the cursor
-        exe "normal! " . remaining_lines . "gk"
-        let adjust -= remaining_lines
-        break
-      endif
-    elseif ( winheight(0) - winline() + line('.') ) >= line('$')
-      " can see the end of the file, don't scroll, just move the cursor
-      exe "normal! " . remaining_lines . "gj"
-      let adjust -= remaining_lines
-      break
+  let smoothness = min([lns, g:scroll_smoothness])
+
+  " scroll fast until scroll_smoothness threshold, smooth a bit every now and then
+  let delay_while_fast_scroll = min([smoothness, 10])."m"
+  for i in range(lns - smoothness)
+    if s:can_see_BOF()
+      exe "normal! " . ( lns - i ) . "gk"
+      call s:center()
+      return
     endif
-    if a:up
-      " the cursor is still far from the upper border, are we going to move it
-      " one line at a time, even 'smoothly'? No, just jump above
-      if winline() > ( &scrolloff + 1 )
-        let adjust = winline() - &scrolloff - 1
-        exe "normal! ".adjust."gk"
-      endif
-    else
-      " same here, but going down
-      if winline() < ( winheight(0) - &scrolloff )
-        let adjust = winheight(0) - &scrolloff - winline()
-        exe "normal! ".adjust."gj"
-      endif
+    normal! gk
+    " delay kicks in depending on s:mult (every 1/2 if == 1, then 1/3...)
+    if s:is_at_top() && (i % (1 + a:mult) == 0)
+      exe "sleep" delay_while_fast_scroll
+      redraw
     endif
-    " scroll fast, only slow down near the end
-    let slow = g:scroll_smoothness - remaining_lines
-    if ( slow > 0 ) && ( slow < g:scroll_smoothness )
-      exe "sleep " . slow . "m"
-    elseif slow % (1 + a:mult) == 0
-      sleep 1m
-    endif
-    execute "normal! " . cmd
-    redraw
   endfor
-  " if we have 'fast-forwarded' the cursor, we must take back what it's been taken
-  if adjust > 0
-    exe "normal! " . adjust . (a:up ? "gj" : "gk")
-    redraw
-  endif
-  if get(g:, 'scroll_center_after', 0)
-    normal! z.
-  endif
+
+  " then, slow down near the end
+  for i in range(smoothness)
+    let remaining_lines = smoothness - i
+
+    if s:can_see_BOF()
+      exe "normal! " . remaining_lines . "gk"
+      call s:center()
+      return
+    endif
+
+    " the cursor is still far from the upper border, just jump above
+    if !s:is_at_top()
+      normal! gk
+    else
+      let time = max([10, i*2])
+      exe "sleep" time . "m"
+      normal! gk
+      redraw
+    endif
+  endfor
+  call s:center()
 endf
+
+"------------------------------------------------------------------------------
+
+fun! s:scroll_down(mult)
+  " scroll fast, only slow down near the end
+  let lns = &scroll * a:mult
+  let smoothness = min([lns, g:scroll_smoothness])
+
+  " scroll fast until scroll_smoothness threshold, smooth a bit every now and then
+  let delay_while_fast_scroll = min([smoothness, 10])."m"
+  for i in range(lns - smoothness)
+    if s:can_see_EOF()
+      exe "normal! " . ( lns - i ) . "gj"
+      call s:center()
+      return
+    endif
+    normal! gj
+    " delay kicks in depending on s:mult (every 1/2 if == 1, then 1/3...)
+    if s:is_at_bottom() && (i % (1 + a:mult) == 0)
+      exe "sleep" delay_while_fast_scroll
+      redraw
+    endif
+  endfor
+
+  " then, slow down near the end
+  for i in range(smoothness)
+    let remaining_lines = smoothness - i
+
+    if s:can_see_EOF()
+      exe "normal! " . remaining_lines . "gj"
+      call s:center()
+      return
+    endif
+    " the cursor is still far from the bottom, just jump below
+    if !s:is_at_bottom()
+      normal! gj
+    else
+      let time = max([10, i*2])
+      exe "sleep" time . "m"
+      normal! gj
+      redraw
+    endif
+  endfor
+  call s:center()
+endfun
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
@@ -175,3 +234,12 @@ fun! scroll#cmd(bang, count)
     echo "Smooth scroll is disabled."
   endif
 endfun
+
+"------------------------------------------------------------------------------
+
+fun! s:center()
+  if get(g:, 'scroll_center_after', 0)
+    normal! z.
+  endif
+endfun
+
