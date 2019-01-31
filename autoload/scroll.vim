@@ -11,10 +11,8 @@ fun! scroll#page(up, count)
   if g:smooth_scroll
     let old_scroll = &scroll
     let &scroll = g:default_scroll
-    if a:up
-      call s:scroll_up(2)
-    else
-      call s:scroll_down(2)
+    if a:up | call s:scroll_up(1)
+    else    | call s:scroll_down(1)
     endif
     let &scroll = old_scroll
   else
@@ -32,10 +30,8 @@ fun! scroll#half(up, count)
 
   if !g:smooth_scroll
     exe "normal!" a:up ? "\<C-U>" : "\<C-D>"
-  elseif a:up
-    call s:scroll_up(1)
-  else
-    call s:scroll_down(1)
+  elseif a:up | call s:scroll_up(0)
+  else        | call s:scroll_down(0)
   endif
 
   if a:count | echo "'scroll' set to" &scroll | endif
@@ -47,10 +43,8 @@ endfun
 
 fun! scroll#mark(up)
   k`
-  if a:up
-    call s:scroll_up(2)
-  else
-    call s:scroll_down(2)
+  if a:up | call s:scroll_up(1)
+  else    | call s:scroll_down(1)
   endif
 endfun
 
@@ -61,11 +55,9 @@ endfun
 
 fun! scroll#reset(up)
   let &scroll = g:default_scroll
-  let s:mult = 2
-  if a:up
-    call s:scroll_up(2)
-  else
-    call s:scroll_down(2)
+  let s:mult = 1
+  if a:up | call s:scroll_up(1)
+  else    | call s:scroll_down(1)
   endif
   echo "'scroll' reset to" &scroll
 endfun
@@ -75,7 +67,7 @@ endfun
 " Uses the same function to scroll by half page, but sets a multiplier.
 " This allows faster scrolling with a custom mapping.
 
-let s:mult = 2
+let s:mult = 1
 
 fun! scroll#mult(up, count)
   let s:mult = a:count > 0 ? a:count : s:mult
@@ -83,10 +75,8 @@ fun! scroll#mult(up, count)
     let n = a:count > 0 ? a:count : ''
     exe "normal!" a:up ? n."\<C-B>" : n."\<C-F>"
   else
-    if a:up
-      call s:scroll_up(s:mult)
-    else
-      call s:scroll_down(s:mult)
+    if a:up | call s:scroll_up(1)
+    else    | call s:scroll_down(1)
     endif
   endif
 endfun
@@ -129,9 +119,9 @@ let s:can_see_EOF    = { -> ( winheight(0) - winline() + line('.') ) >= line('$'
 let s:is_at_bottom   = { -> winline() == winheight(0) - &scrolloff }
 let s:is_at_top      = { -> winline() == 1 + &scrolloff }
 
-fun! s:scroll_up(mult)
+fun! s:scroll_up(page)
   " scroll fast, only slow down near the end
-  let lns = &scroll * a:mult
+  let lns = a:page ? &window : &scroll
   let smoothness = min([lns, g:scroll_smoothness])
 
   " scroll fast until scroll_smoothness threshold, smooth a bit every now and then
@@ -139,12 +129,11 @@ fun! s:scroll_up(mult)
   for i in range(lns - smoothness)
     if s:can_see_BOF()
       exe "normal! " . ( lns - i ) . "gk"
-      call s:center()
-      return
+      return s:center(a:page)
     endif
     normal! gk
-    " delay kicks in depending on s:mult (every 1/2 if == 1, then 1/3...)
-    if s:is_at_top() && (i % (1 + a:mult) == 0)
+    " delay kicks in every 2 (half page) or 3 (full page)
+    if s:is_at_top() && i % (2 + a:page) == 0
       exe "sleep" delay_while_fast_scroll
       redraw
     endif
@@ -156,8 +145,7 @@ fun! s:scroll_up(mult)
 
     if s:can_see_BOF()
       exe "normal! " . remaining_lines . "gk"
-      call s:center()
-      return
+      return s:center(a:page)
     endif
 
     " the cursor is still far from the upper border, just jump above
@@ -170,14 +158,14 @@ fun! s:scroll_up(mult)
       redraw
     endif
   endfor
-  call s:center()
+  call s:center(a:page)
 endf
 
 "------------------------------------------------------------------------------
 
-fun! s:scroll_down(mult)
+fun! s:scroll_down(page)
   " scroll fast, only slow down near the end
-  let lns = &scroll * a:mult
+  let lns = a:page ? &window : &scroll
   let smoothness = min([lns, g:scroll_smoothness])
 
   " scroll fast until scroll_smoothness threshold, smooth a bit every now and then
@@ -185,12 +173,11 @@ fun! s:scroll_down(mult)
   for i in range(lns - smoothness)
     if s:can_see_EOF()
       exe "normal! " . ( lns - i ) . "gj"
-      call s:center()
-      return
+      return s:center(a:page)
     endif
     normal! gj
-    " delay kicks in depending on s:mult (every 1/2 if == 1, then 1/3...)
-    if s:is_at_bottom() && (i % (1 + a:mult) == 0)
+    " delay kicks in every 2 (half page) or 3 (full page)
+    if s:is_at_bottom() && i % (2 + a:page) == 0
       exe "sleep" delay_while_fast_scroll
       redraw
     endif
@@ -202,8 +189,7 @@ fun! s:scroll_down(mult)
 
     if s:can_see_EOF()
       exe "normal! " . remaining_lines . "gj"
-      call s:center()
-      return
+      return s:center(a:page)
     endif
     " the cursor is still far from the bottom, just jump below
     if !s:is_at_bottom()
@@ -215,7 +201,7 @@ fun! s:scroll_down(mult)
       redraw
     endif
   endfor
-  call s:center()
+  call s:center(a:page)
 endfun
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -237,9 +223,32 @@ endfun
 
 "------------------------------------------------------------------------------
 
-fun! s:center()
+fun! s:center(page)
+  """Center and print the current page.
   if get(g:, 'scroll_center_after', 0)
     normal! z.
+  endif
+  if a:page
+    let one = &window
+    let current = ( line('.') / one ) + 1
+    let total = ( line("$") / one ) + 1
+    echo "Page" current . '/' . total
+  endif
+endfun
+
+"------------------------------------------------------------------------------
+
+fun! s:to_top(page)
+  if a:page
+    normal! H
+  endif
+endfun
+
+"------------------------------------------------------------------------------
+
+fun! s:to_bottom(page)
+  if a:page
+    normal! L
   endif
 endfun
 
