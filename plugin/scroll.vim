@@ -20,13 +20,11 @@ if !exists('g:scroll_smoothness')
 endif
 
 nnoremap <Plug>scroll_page_up    :<c-u>call scroll#page(1, v:count)<cr>
-nnoremap <Plug>scroll_mult_up    :<c-u>call scroll#mult(1, v:count)<cr>
 nnoremap <Plug>scroll_half_up    :<c-u>call scroll#half(1, v:count)<cr>
 nnoremap <Plug>scroll_mark_up    :<c-u>call scroll#mark(1)<cr>
 nnoremap <Plug>scroll_reset_up   :<c-u>call scroll#reset(1)<cr>
 
 nnoremap <Plug>scroll_page_down  :<c-u>call scroll#page(0, v:count)<cr>
-nnoremap <Plug>scroll_mult_down  :<c-u>call scroll#mult(0, v:count)<cr>
 nnoremap <Plug>scroll_half_down  :<c-u>call scroll#half(0, v:count)<cr>
 nnoremap <Plug>scroll_mark_down  :<c-u>call scroll#mark(0)<cr>
 nnoremap <Plug>scroll_reset_down :<c-u>call scroll#reset(0)<cr>
