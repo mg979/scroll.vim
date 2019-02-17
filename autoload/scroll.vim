@@ -61,7 +61,7 @@ let s:is_at_top      = { -> winline() == 1 + &scrolloff }
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 fun! s:scroll_page_down()
-  let lns = &window
+  let lns = ( &scroll - 1 ) * 2
   let smoothness = min([lns, g:scroll_smoothness])
 
   normal! L
@@ -91,7 +91,7 @@ endfun
 "------------------------------------------------------------------------------
 
 fun! s:scroll_page_up()
-  let lns = &window
+  let lns = ( &scroll - 1 ) * 2
   let smoothness = min([lns, g:scroll_smoothness])
 
   normal! H
