@@ -1,4 +1,6 @@
 let s:delay = version < 801 ? 5 : 3
+let g:smooth_scroll = get( g:, 'smooth_scroll', 1 )
+let g:scroll_smoothness = exists('g:scroll_smoothness') ? g:scroll_smoothness : 5
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Scrolling by page means that if a count is given, only the last page will be
@@ -9,16 +11,13 @@ fun! scroll#page(up, count)
   if n
     exe "normal!" a:up ? n."\<C-B>" : n."\<C-F>"
   endif
-  if g:smooth_scroll
-    let old_scroll = &scroll
-    let &scroll = g:default_scroll
-    if a:up | call s:scroll_page_up()
-    else    | call s:scroll_page_down()
-    endif
-    let &scroll = old_scroll
-  else
+
+  if !g:smooth_scroll
     exe "normal!" a:up ? "\<C-B>" : "\<C-F>"
+  elseif a:up | call s:scroll_page_up()
+  else        | call s:scroll_page_down()
   endif
+  call s:center(1)
 endfun
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -35,18 +34,8 @@ fun! scroll#half(up, count)
   else        | call s:scroll_down()
   endif
 
+  call s:center()
   if a:count | echo "'scroll' set to" &scroll | endif
-endfun
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-" Scroll a page, but before doing so, set a mark.
-
-fun! scroll#mark(up)
-  k`
-  if a:up | call s:scroll_page_up()
-  else    | call s:scroll_page_down()
-  endif
 endfun
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -54,10 +43,11 @@ endfun
 " Scroll a page, but before doing so, restore &scroll to the default value.
 
 fun! scroll#reset(up)
-  let &scroll = g:default_scroll
-  if a:up | call s:scroll_page_up()
-  else    | call s:scroll_page_down()
+  set scroll=0
+  if a:up | call s:scroll_up()
+  else    | call s:scroll_down()
   endif
+  call s:center()
   echo "'scroll' reset to" &scroll
 endfun
 
@@ -77,7 +67,7 @@ fun! s:scroll_page_down()
   normal! L
 
   for i in range(lns - smoothness)
-    if s:can_see_EOF() | return s:center(1) | endif
+    if s:can_see_EOF() | return | endif
     exe "normal! \<c-e>"
     if i % s:delay == 0
       sleep 10m
@@ -87,7 +77,7 @@ fun! s:scroll_page_down()
 
   for i in range(smoothness)
     if s:can_see_EOF()
-      return s:center(1)
+      return
     endif
 
     let time = max([10, i*2])
@@ -96,7 +86,6 @@ fun! s:scroll_page_down()
     redraw
   endfor
   normal! H
-  call s:center(1)
 endfun
 
 "------------------------------------------------------------------------------
@@ -108,7 +97,7 @@ fun! s:scroll_page_up()
   normal! H
 
   for i in range(lns - smoothness)
-    if s:can_see_BOF() | return s:center(1) | endif
+    if s:can_see_BOF() | return | endif
     exe "normal! \<c-y>"
     if i % s:delay == 0
       sleep 10m
@@ -118,7 +107,7 @@ fun! s:scroll_page_up()
 
   for i in range(smoothness)
     if s:can_see_BOF()
-      return s:center(1)
+      return
     endif
 
     let time = max([10, i*2])
@@ -127,7 +116,6 @@ fun! s:scroll_page_up()
     redraw
   endfor
   normal! L
-  call s:center(1)
 endfun
 
 "------------------------------------------------------------------------------
@@ -142,7 +130,7 @@ fun! s:scroll_up()
   for i in range(lns - smoothness)
     if s:can_see_BOF()
       exe "normal! " . ( lns - i ) . "gk0"
-      return s:center()
+      return
     endif
     normal! gk0
     " delay kicks in every 2 (half page) or 3 (full page)
@@ -152,13 +140,13 @@ fun! s:scroll_up()
     endif
   endfor
 
-  " then, slow down near the end
+  " slow down near the end
   for i in range(smoothness)
     let remaining_lines = smoothness - i
 
     if s:can_see_BOF()
       exe "normal! " . remaining_lines . "gk0"
-      return s:center()
+      return
     endif
 
     " the cursor is still far from the upper border, just jump above
@@ -171,7 +159,6 @@ fun! s:scroll_up()
       redraw
     endif
   endfor
-  call s:center()
 endf
 
 "------------------------------------------------------------------------------
@@ -186,7 +173,7 @@ fun! s:scroll_down()
   for i in range(lns - smoothness)
     if s:can_see_EOF()
       exe "normal! " . ( lns - i ) . "gj0"
-      return s:center()
+      return
     endif
     normal! gj0
     if s:is_at_bottom() && i % s:delay == 0
@@ -195,13 +182,13 @@ fun! s:scroll_down()
     endif
   endfor
 
-  " then, slow down near the end
+  " slow down near the end
   for i in range(smoothness)
     let remaining_lines = smoothness - i
 
     if s:can_see_EOF()
       exe "normal! " . remaining_lines . "gj0"
-      return s:center()
+      return
     endif
     " the cursor is still far from the bottom, just jump below
     if !s:is_at_bottom()
@@ -213,7 +200,6 @@ fun! s:scroll_down()
       redraw
     endif
   endfor
-  call s:center()
 endfun
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
