@@ -129,10 +129,10 @@ fun! s:scroll_up()
   " scroll fast until scroll_smoothness threshold, smooth a bit every now and then
   for i in range(lns - smoothness)
     if s:can_see_BOF()
-      exe "normal! " . ( lns - i ) . "gk0"
+      exe "normal! " . ( lns - i ) . "gk^"
       return
     endif
-    exe "normal! \<c-y>gk0"
+    exe "normal! \<c-y>gk^"
     " delay kicks in every 2 (half page) or 3 (full page)
     if i % s:delay == 0
       exe "sleep" delay_while_fast_scroll
@@ -145,17 +145,17 @@ fun! s:scroll_up()
     let remaining_lines = smoothness - i
 
     if s:can_see_BOF()
-      exe "normal! " . remaining_lines . "\<c-y>gk0"
+      exe "normal! " . remaining_lines . "\<c-y>gk^"
       return
     endif
 
     " the cursor is still far from the upper border, just jump above
     if !s:is_at_top()
-      exe "normal! \<c-y>gk0"
+      exe "normal! \<c-y>gk^"
     else
       let time = max([10, i*2])
       exe "sleep" time . "m"
-      exe "normal! \<c-y>gk0"
+      exe "normal! \<c-y>gk^"
       redraw
     endif
   endfor
@@ -172,10 +172,10 @@ fun! s:scroll_down()
   " scroll fast until scroll_smoothness threshold, smooth a bit every now and then
   for i in range(lns - smoothness)
     if s:can_see_EOF()
-      exe "normal! " . ( lns - i ) . "gj0"
+      exe "normal! " . ( lns - i ) . "gj^"
       return
     endif
-    exe "normal! gj0\<c-e>"
+    exe "normal! gj^\<c-e>"
     if i % s:delay == 0
       exe "sleep" delay_while_fast_scroll
       redraw
@@ -187,16 +187,16 @@ fun! s:scroll_down()
     let remaining_lines = smoothness - i
 
     if s:can_see_EOF()
-      exe "normal! " . remaining_lines . "gj0"
+      exe "normal! " . remaining_lines . "gj^"
       return
     endif
     " the cursor is still far from the bottom, just jump below
     if !s:is_at_bottom()
-      exe "normal! gj0\<c-e>"
+      exe "normal! gj^\<c-e>"
     else
       let time = max([10, i*2])
       exe "sleep" time . "m"
-      exe "normal! gj0\<c-e>"
+      exe "normal! gj^\<c-e>"
       redraw
     endif
   endfor
