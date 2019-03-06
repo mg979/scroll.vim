@@ -1,4 +1,6 @@
+" older vim versions are slower for some reason
 let s:delay = version < 801 ? 5 : 3
+
 let g:smooth_scroll = get( g:, 'smooth_scroll', 1 )
 let g:scroll_smoothness = exists('g:scroll_smoothness') ? g:scroll_smoothness : 5
 
@@ -132,8 +134,11 @@ fun! s:scroll_up()
       exe "normal! " . ( lns - i ) . "gk^"
       return
     endif
-    exe "normal! \<c-y>gk^"
-    " delay kicks in every 2 (half page) or 3 (full page)
+    if s:is_at_bottom()
+      exe "normal! gk\<c-y>"
+    else
+      exe "normal! \<c-y>gk"
+    endif
     if i % s:delay == 0
       exe "sleep" delay_while_fast_scroll
       redraw
@@ -149,16 +154,16 @@ fun! s:scroll_up()
       return
     endif
 
-    " the cursor is still far from the upper border, just jump above
-    if !s:is_at_top()
-      exe "normal! \<c-y>gk^"
+    let time = max([10, i*2])
+    exe "sleep" time . "m"
+    if s:is_at_bottom()
+      exe "normal! gk\<c-y>"
     else
-      let time = max([10, i*2])
-      exe "sleep" time . "m"
-      exe "normal! \<c-y>gk^"
-      redraw
+      exe "normal! \<c-y>gk"
     endif
+    redraw
   endfor
+  exe "normal! ^"
 endf
 
 "------------------------------------------------------------------------------
@@ -190,16 +195,16 @@ fun! s:scroll_down()
       exe "normal! " . remaining_lines . "gj^"
       return
     endif
-    " the cursor is still far from the bottom, just jump below
-    if !s:is_at_bottom()
+    let time = max([10, i*2])
+    exe "sleep" time . "m"
+    if s:is_at_top()
       exe "normal! gj^\<c-e>"
     else
-      let time = max([10, i*2])
-      exe "sleep" time . "m"
       exe "normal! gj^\<c-e>"
-      redraw
     endif
+    redraw
   endfor
+  exe "normal! ^"
 endfun
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
