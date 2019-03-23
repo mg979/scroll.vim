@@ -63,10 +63,10 @@ let s:is_at_top      = { -> winline() == 1 + &scrolloff }
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 fun! s:scroll_page_down()
-  let lns = ( &scroll * 2 ) - 1
+  let lns = winheight(0) - 2
   let smoothness = min([lns, g:scroll_smoothness])
 
-  normal! L
+  keepjumps normal! L
 
   for i in range(lns - smoothness)
     if s:can_see_EOF() | return | endif
@@ -87,16 +87,16 @@ fun! s:scroll_page_down()
     exe "normal! \<c-e>"
     redraw
   endfor
-  normal! H
+  keepjumps normal! H
 endfun
 
 "------------------------------------------------------------------------------
 
 fun! s:scroll_page_up()
-  let lns = ( &scroll * 2 ) - 1
+  let lns = winheight(0) - 2
   let smoothness = min([lns, g:scroll_smoothness])
 
-  normal! H
+  keepjumps normal! H
 
   for i in range(lns - smoothness)
     if s:can_see_BOF() | return | endif
@@ -117,7 +117,7 @@ fun! s:scroll_page_up()
     exe "normal! \<c-y>"
     redraw
   endfor
-  normal! L
+  keepjumps normal! L
 endfun
 
 "------------------------------------------------------------------------------
@@ -198,9 +198,9 @@ fun! s:scroll_down()
     let time = max([10, i*2])
     exe "sleep" time . "m"
     if s:is_at_top()
-      exe "normal! gj^\<c-e>"
+      exe "normal! gj\<c-e>"
     else
-      exe "normal! gj^\<c-e>"
+      exe "normal! gj\<c-e>"
     endif
     redraw
   endfor
