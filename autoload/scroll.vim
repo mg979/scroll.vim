@@ -134,7 +134,9 @@ fun! s:scroll_up()
       exe "normal! " . ( lns - i ) . "gk^"
       return
     endif
-    if s:is_at_bottom()
+    if s:can_see_EOF()
+      exe "normal! \<c-y>"
+    elseif s:is_at_bottom()
       exe "normal! gk\<c-y>"
     else
       exe "normal! \<c-y>gk"
@@ -180,7 +182,11 @@ fun! s:scroll_down()
       exe "normal! " . ( lns - i ) . "gj^"
       return
     endif
-    exe "normal! gj^\<c-e>"
+    if s:is_at_bottom()
+      exe "normal! gj^"
+    else
+      exe "normal! gj^\<c-e>"
+    endif
     if i % s:delay == 0
       exe "sleep" delay_while_fast_scroll
       redraw
@@ -199,6 +205,8 @@ fun! s:scroll_down()
     exe "sleep" time . "m"
     if s:is_at_top()
       exe "normal! gj\<c-e>"
+    elseif s:is_at_bottom()
+      exe "normal! gj^"
     else
       exe "normal! gj\<c-e>"
     endif
