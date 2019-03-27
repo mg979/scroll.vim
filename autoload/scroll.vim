@@ -19,7 +19,7 @@ fun! scroll#page(up, count)
   elseif a:up | call s:scroll_page_up()
   else        | call s:scroll_page_down()
   endif
-  call s:center(1)
+  call s:print()
 endfun
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -36,7 +36,6 @@ fun! scroll#half(up, count)
   else        | call s:scroll_down()
   endif
 
-  call s:center()
   if a:count | echo "'scroll' set to" &scroll | endif
 endfun
 
@@ -49,7 +48,7 @@ fun! scroll#reset(up)
   if a:up | call s:scroll_up()
   else    | call s:scroll_down()
   endif
-  call s:center()
+  call s:print()
   echo "'scroll' reset to" &scroll
 endfun
 
@@ -234,16 +233,12 @@ endfun
 
 "------------------------------------------------------------------------------
 
-fun! s:center(...)
-  """Center and print the current page.
-  if get(g:, 'scroll_center_after', 0)
-    normal! z.
-  endif
-  if a:0
-    let one = &window
-    let current = ( line('.') / one ) + 1
-    let total = ( line("$") / one ) + 1
-    echo "Page" current . '/' . total
-  endif
+fun! s:print()
+  """Print the current page.
+  let one = winheight(0)
+  let current = ( line('.') / one ) + 1
+  let total = ( line("$") / one ) + 1
+  redraw
+  echo "Page" current . '/' . total
 endfun
 
