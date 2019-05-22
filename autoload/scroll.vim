@@ -8,7 +8,9 @@ let g:scroll_smoothness = exists('g:scroll_smoothness') ? g:scroll_smoothness : 
 " Scrolling by page means that if a count is given, only the last page will be
 " scrolled smoothly. It's the normal <C-F> / <C-B> behaviour.
 
+let s:ready = 1
 fun! scroll#page(up, count)
+  if !s:ready | return | endif
   let n = a:count > 1 ? a:count - 1 : ''
   if n
     exe "normal!" a:up ? n."\<C-B>" : n."\<C-F>"
@@ -16,24 +18,30 @@ fun! scroll#page(up, count)
 
   if !g:smooth_scroll
     exe "normal!" a:up ? "\<C-B>" : "\<C-F>"
-  elseif a:up | call s:scroll_page_up()
-  else        | call s:scroll_page_down()
+  elseif a:up | let s:ready = 0 | call timer_start(10, "scroll#page_up")
+  else        | let s:ready = 0 | call timer_start(10, "scroll#page_down")
   endif
   call s:print()
 endfun
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-" Scrolling by 'half' page is the normal <C-D> / <C-U> behaviour. A count will
-" set &scroll accordingly.
+" Scrolling by 'half' page is the normal <C-D> / <C-U> behaviour.
+" A count will set &scroll accordingly.
 
 fun! scroll#half(up, count)
-  if a:count | let &scroll = a:count | endif
+  if !s:ready | return | endif
+  if a:count
+    if !exists('s:oldscroll')
+      let s:oldscroll = &scroll
+    endif
+    let &scroll = a:count
+  endif
 
   if !g:smooth_scroll
     exe "normal!" a:up ? "\<C-U>" : "\<C-D>"
-  elseif a:up | call s:scroll_up()
-  else        | call s:scroll_down()
+  elseif a:up | let s:ready = 0 | call timer_start(10, "scroll#up")
+  else        | let s:ready = 0 | call timer_start(10, "scroll#down")
   endif
 
   if a:count | echo "'scroll' set to" &scroll | endif
@@ -44,9 +52,13 @@ endfun
 " Scroll a page, but before doing so, restore &scroll to the default value.
 
 fun! scroll#reset(up)
-  set scroll=0
-  if a:up | call s:scroll_up()
-  else    | call s:scroll_down()
+  if !s:ready | return | endif
+  if exists('s:oldscroll')
+    let &scroll = s:oldscroll
+    unlet s:oldscroll
+  endif
+  if a:up | let s:ready = 0 | call timer_start(10, "scroll#up")
+  else    | let s:ready = 0 | call timer_start(10, "scroll#down")
   endif
   call s:print()
   echo "'scroll' reset to" &scroll
@@ -61,14 +73,14 @@ let s:is_at_top      = { -> winline() == 1 + &scrolloff }
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-fun! s:scroll_page_down()
+fun! scroll#page_down(t)
   let lns = winheight(0) - 2
   let smoothness = min([lns, g:scroll_smoothness])
 
   keepjumps normal! L
 
   for i in range(lns - smoothness)
-    if s:can_see_EOF() | return | endif
+    if s:can_see_EOF() | let s:ready = 1 | return | endif
     exe "normal! \<c-e>"
     if i % s:delay == 0
       sleep 10m
@@ -77,9 +89,7 @@ fun! s:scroll_page_down()
   endfor
 
   for i in range(smoothness)
-    if s:can_see_EOF()
-      return
-    endif
+    if s:can_see_EOF() | let s:ready = 1 | return | endif
 
     let time = max([10, i*2])
     call execute("sleep ".time."m")
@@ -87,18 +97,19 @@ fun! s:scroll_page_down()
     redraw
   endfor
   keepjumps normal! H
+  let s:ready = 1
 endfun
 
 "------------------------------------------------------------------------------
 
-fun! s:scroll_page_up()
+fun! scroll#page_up(t)
   let lns = winheight(0) - 2
   let smoothness = min([lns, g:scroll_smoothness])
 
   keepjumps normal! H
 
   for i in range(lns - smoothness)
-    if s:can_see_BOF() | return | endif
+    if s:can_see_BOF() | let s:ready = 1 | return | endif
     exe "normal! \<c-y>"
     if i % s:delay == 0
       sleep 10m
@@ -107,9 +118,7 @@ fun! s:scroll_page_up()
   endfor
 
   for i in range(smoothness)
-    if s:can_see_BOF()
-      return
-    endif
+    if s:can_see_BOF() | let s:ready = 1 | return | endif
 
     let time = max([10, i*2])
     call execute("sleep ".time."m")
@@ -117,11 +126,12 @@ fun! s:scroll_page_up()
     redraw
   endfor
   keepjumps normal! L
+  let s:ready = 1
 endfun
 
 "------------------------------------------------------------------------------
 
-fun! s:scroll_up()
+fun! scroll#up(t)
   " scroll fast, only slow down near the end
   let lns = &scroll
   let smoothness = min([lns, g:scroll_smoothness])
@@ -131,6 +141,7 @@ fun! s:scroll_up()
   for i in range(lns - smoothness)
     if s:can_see_BOF()
       exe "normal! " . ( lns - i ) . "gk^"
+      let s:ready = 1
       return
     endif
     if s:can_see_EOF()
@@ -152,6 +163,7 @@ fun! s:scroll_up()
 
     if s:can_see_BOF()
       exe "normal! " . remaining_lines . "\<c-y>gk^"
+      let s:ready = 1
       return
     endif
 
@@ -165,11 +177,12 @@ fun! s:scroll_up()
     redraw
   endfor
   exe "normal! ^"
+  let s:ready = 1
 endf
 
 "------------------------------------------------------------------------------
 
-fun! s:scroll_down()
+fun! scroll#down(t)
   " scroll fast, only slow down near the end
   let lns = &scroll
   let smoothness = min([lns, g:scroll_smoothness])
@@ -179,6 +192,7 @@ fun! s:scroll_down()
   for i in range(lns - smoothness)
     if s:can_see_EOF()
       exe "normal! " . ( lns - i ) . "gj^"
+      let s:ready = 1
       return
     endif
     if s:is_at_bottom()
@@ -198,6 +212,7 @@ fun! s:scroll_down()
 
     if s:can_see_EOF()
       exe "normal! " . remaining_lines . "gj^"
+      let s:ready = 1
       return
     endif
     let time = max([10, i*2])
@@ -212,6 +227,7 @@ fun! s:scroll_down()
     redraw
   endfor
   exe "normal! ^"
+  let s:ready = 1
 endfun
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
