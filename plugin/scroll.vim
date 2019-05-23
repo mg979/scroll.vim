@@ -15,11 +15,11 @@ command! -count -bang SmoothScroll call scroll#cmd(<bang>0, <count>)
 
 nnoremap <Plug>scroll_page_up    :<c-u>call scroll#page(1, v:count)<cr>
 nnoremap <Plug>scroll_half_up    :<c-u>call scroll#half(1, v:count)<cr>
-nnoremap <Plug>scroll_reset_up   :<c-u>call scroll#reset(1)<cr>
+nnoremap <Plug>scroll_reset_up   :<c-u>call scroll#default(1)<cr>
 
 nnoremap <Plug>scroll_page_down  :<c-u>call scroll#page(0, v:count)<cr>
 nnoremap <Plug>scroll_half_down  :<c-u>call scroll#half(0, v:count)<cr>
-nnoremap <Plug>scroll_reset_down :<c-u>call scroll#reset(0)<cr>
+nnoremap <Plug>scroll_reset_down :<c-u>call scroll#default(0)<cr>
 
 if !exists('g:scroll_no_mappings')
   " scroll page

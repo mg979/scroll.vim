@@ -18,8 +18,8 @@ fun! scroll#page(up, count)
 
   if !g:smooth_scroll
     exe "normal!" a:up ? "\<C-B>" : "\<C-F>"
-  elseif a:up | let s:ready = 0 | call timer_start(10, "scroll#page_up")
-  else        | let s:ready = 0 | call timer_start(10, "scroll#page_down")
+  elseif a:up | call s:start("scroll#page_up")
+  else        | call s:start("scroll#page_down")
   endif
   call scroll#print(1)
 endfun
@@ -40,8 +40,8 @@ fun! scroll#half(up, count)
 
   if !g:smooth_scroll
     exe "normal!" a:up ? "\<C-U>" : "\<C-D>"
-  elseif a:up | let s:ready = 0 | call timer_start(10, "scroll#up")
-  else        | let s:ready = 0 | call timer_start(10, "scroll#down")
+  elseif a:up | call s:start("scroll#up")
+  else        | call s:start("scroll#down")
   endif
 
   if a:count | echo "'scroll' set to" &scroll | endif
@@ -51,14 +51,14 @@ endfun
 
 " Scroll a page, but before doing so, restore &scroll to the default value.
 
-fun! scroll#reset(up)
+fun! scroll#default(up)
   if !s:ready | return | endif
   if exists('s:oldscroll')
     let &scroll = s:oldscroll
     unlet s:oldscroll
   endif
-  if a:up | let s:ready = 0 | call timer_start(10, "scroll#up")
-  else    | let s:ready = 0 | call timer_start(10, "scroll#down")
+  if a:up | call s:start("scroll#up")
+  else    | call s:start("scroll#down")
   endif
   call scroll#print(1)
   echo "'scroll' reset to" &scroll
@@ -80,7 +80,7 @@ fun! scroll#page_down(t)
   keepjumps normal! L
 
   for i in range(lns - smoothness)
-    if s:can_see_EOF() | let s:ready = 1 | return | endif
+    if s:can_see_EOF() | return s:reset() | endif
     exe "normal! \<c-e>"
     if i % s:delay == 0
       sleep 10m
@@ -89,7 +89,7 @@ fun! scroll#page_down(t)
   endfor
 
   for i in range(smoothness)
-    if s:can_see_EOF() | let s:ready = 1 | return | endif
+    if s:can_see_EOF() | return s:reset() | endif
 
     let time = max([10, i*2])
     call execute("sleep ".time."m")
@@ -97,7 +97,7 @@ fun! scroll#page_down(t)
     redraw
   endfor
   keepjumps normal! H
-  let s:ready = 1
+  return s:reset()
 endfun
 
 "------------------------------------------------------------------------------
@@ -109,7 +109,7 @@ fun! scroll#page_up(t)
   keepjumps normal! H
 
   for i in range(lns - smoothness)
-    if s:can_see_BOF() | let s:ready = 1 | return | endif
+    if s:can_see_BOF() | return s:reset() | endif
     exe "normal! \<c-y>"
     if i % s:delay == 0
       sleep 10m
@@ -118,7 +118,7 @@ fun! scroll#page_up(t)
   endfor
 
   for i in range(smoothness)
-    if s:can_see_BOF() | let s:ready = 1 | return | endif
+    if s:can_see_BOF() | return s:reset() | endif
 
     let time = max([10, i*2])
     call execute("sleep ".time."m")
@@ -126,7 +126,7 @@ fun! scroll#page_up(t)
     redraw
   endfor
   keepjumps normal! L
-  let s:ready = 1
+  return s:reset()
 endfun
 
 "------------------------------------------------------------------------------
@@ -141,8 +141,7 @@ fun! scroll#up(t)
   for i in range(lns - smoothness)
     if s:can_see_BOF()
       exe "normal! " . ( lns - i ) . "gk^"
-      let s:ready = 1
-      return
+      return s:reset()
     endif
     if s:can_see_EOF()
       exe "normal! \<c-y>"
@@ -163,8 +162,7 @@ fun! scroll#up(t)
 
     if s:can_see_BOF()
       exe "normal! " . remaining_lines . "\<c-y>gk^"
-      let s:ready = 1
-      return
+      return s:reset()
     endif
 
     let time = max([10, i*2])
@@ -177,7 +175,7 @@ fun! scroll#up(t)
     redraw
   endfor
   exe "normal! ^"
-  let s:ready = 1
+  return s:reset()
 endf
 
 "------------------------------------------------------------------------------
@@ -192,8 +190,7 @@ fun! scroll#down(t)
   for i in range(lns - smoothness)
     if s:can_see_EOF()
       exe "normal! " . ( lns - i ) . "gj^"
-      let s:ready = 1
-      return
+      return s:reset()
     endif
     if s:is_at_bottom()
       exe "normal! gj^"
@@ -212,8 +209,7 @@ fun! scroll#down(t)
 
     if s:can_see_EOF()
       exe "normal! " . remaining_lines . "gj^"
-      let s:ready = 1
-      return
+      return s:reset()
     endif
     let time = max([10, i*2])
     exe "sleep" time . "m"
@@ -227,7 +223,7 @@ fun! scroll#down(t)
     redraw
   endfor
   exe "normal! ^"
-  let s:ready = 1
+  return s:reset()
 endfun
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -258,5 +254,18 @@ fun! scroll#print(...)
   let string = current . '/' . total
   if a:0 | redraw | echo "Page" string | endif
   return string
+endfun
+
+"------------------------------------------------------------------------------
+
+fun! s:start(fun) abort
+  let s:ready = 0
+  call timer_start(10, a:fun)
+endfun
+
+"------------------------------------------------------------------------------
+
+fun! s:reset(...) abort
+  let s:ready = 1
 endfun
 
