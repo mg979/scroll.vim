@@ -21,7 +21,7 @@ fun! scroll#page(up, count)
   elseif a:up | let s:ready = 0 | call timer_start(10, "scroll#page_up")
   else        | let s:ready = 0 | call timer_start(10, "scroll#page_down")
   endif
-  call s:print()
+  call scroll#print(1)
 endfun
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -60,7 +60,7 @@ fun! scroll#reset(up)
   if a:up | let s:ready = 0 | call timer_start(10, "scroll#up")
   else    | let s:ready = 0 | call timer_start(10, "scroll#down")
   endif
-  call s:print()
+  call scroll#print(1)
   echo "'scroll' reset to" &scroll
 endfun
 
@@ -249,12 +249,14 @@ endfun
 
 "------------------------------------------------------------------------------
 
-fun! s:print()
+fun! scroll#print(...)
   """Print the current page.
+  if a:0 && !get(g:, 'scroll_print_current_page', 0) | return | endif
   let one = winheight(0)
   let current = ( line('.') / one ) + 1
   let total = ( line("$") / one ) + 1
-  redraw
-  echo "Page" current . '/' . total
+  let string = current . '/' . total
+  if a:0 | redraw | echo "Page" string | endif
+  return string
 endfun
 
