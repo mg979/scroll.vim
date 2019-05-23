@@ -1,5 +1,6 @@
 " older vim versions are slower for some reason
 let s:delay = version < 801 ? 5 : 3
+let s:DELAY = s:delay
 
 let g:smooth_scroll = get( g:, 'smooth_scroll', 1 )
 let g:scroll_smoothness = exists('g:scroll_smoothness') ? g:scroll_smoothness : 5
@@ -10,7 +11,7 @@ let g:scroll_smoothness = exists('g:scroll_smoothness') ? g:scroll_smoothness : 
 
 let s:ready = 1
 fun! scroll#page(up, count)
-  if !s:ready | return | endif
+  if !s:ready | return scroll#accelerate() | endif
   let n = a:count > 1 ? a:count - 1 : ''
   if n
     exe "normal!" a:up ? n."\<C-B>" : n."\<C-F>"
@@ -30,7 +31,7 @@ endfun
 " A count will set &scroll accordingly.
 
 fun! scroll#half(up, count)
-  if !s:ready | return | endif
+  if !s:ready | return scroll#accelerate() | endif
   if a:count
     if !exists('s:oldscroll')
       let s:oldscroll = &scroll
@@ -258,6 +259,14 @@ endfun
 
 "------------------------------------------------------------------------------
 
+fun! scroll#accelerate() abort
+  if s:delay < 10
+    let s:delay += 1
+  endif
+endfun
+
+"------------------------------------------------------------------------------
+
 fun! s:start(fun) abort
   let s:ready = 0
   call timer_start(10, a:fun)
@@ -266,6 +275,7 @@ endfun
 "------------------------------------------------------------------------------
 
 fun! s:reset(...) abort
+  let s:delay = s:DELAY
   let s:ready = 1
 endfun
 
