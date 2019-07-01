@@ -1,0 +1,76 @@
+*smooth-scroll.txt*    scroll.vim     Version 0.1.0
+
+SCROLL                                                          *smooth-scroll*
+===============================================================================
+
+
+A smooth scroll plugin. After scrolling, cursor should end up exactly where it
+would end without plugin, also keeping the same viewport position. It should
+scroll exactly in the same way, but smoothly.
+
+It will respect your 'scroll' and 'scrolloff' settings. Moreover, keeping the
+keys pressed won't block vim, it will stop scrolling soon after you release
+the keys.
+
+
+
+
+MAPPINGS                                               *smooth-scroll-mappings*
+===============================================================================
+                                                        *g:scroll_no_mappings*
+
+Unless |g:scroll_no_mappings| is set to 1, these are the default mappings and
+plugs:
+
+-------------------------------------------------------------------------------
+
+  <C-F> / <PageDown>   scroll one page up          <Plug>scroll_page_down
+  <C-B> / <PageUp>     ,,              down        <Plug>scroll_page_up
+
+  <C-U>                scroll half-page up         <Plug>scroll_half_up
+  <C-D>                ,,               down       <Plug>scroll_half_down
+
+  g<C-U>               reset &scroll to default    <Plug>scroll_reset_up
+  g<C-D>               ,,                          <Plug>scroll_reset_down
+
+  zz                   center page                 <Plug>scroll_center
+  z<CR>                top of page                 <Plug>scroll_top
+
+-------------------------------------------------------------------------------
+>
+If a [count] is given, the first [count-1] (half-)pages are scrolled much
+faster that the last one.
+
+
+
+
+SETTINGS                                               *smooth-scroll-settings*
+===============================================================================
+
+                                                             *g:smooth_scroll*
+Default: 1
+
+  Set to 0 to disable smooth scroll.
+
+
+                                                          *g:scroll_smoothness*
+Default: 5
+
+  How smooth/fast is the scrolling. Higher is smoother (slower).
+  Not recommended above 15.
+
+
+                                                         *g:scroll_no_mappings*
+Default: 0
+
+  Don't set default mappings.
+
+                                                  *g:scroll_print_current_page*
+Default: 0
+
+  Print the current page of document after page up/down.
+
+
+
+
+vim:tw=78:sw=2:ts=2:ft=help:norl:nowrap:

@@ -1,15 +1,15 @@
 " older vim versions are slower for some reason
-let s:delay = version < 801 ? 5 : 3
+let s:delay = v:version < 801 ? 5 : 3
 let s:DELAY = s:delay
+let s:ready = 1
 
-let g:smooth_scroll = get( g:, 'smooth_scroll', 1 )
-let g:scroll_smoothness = exists('g:scroll_smoothness') ? g:scroll_smoothness : 5
+let g:smooth_scroll = get(g:, 'smooth_scroll', 1 )
+let g:scroll_smoothness = get(g:, 'scroll_smoothness', 5)
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Scrolling by page means that if a count is given, only the last page will be
 " scrolled smoothly. It's the normal <C-F> / <C-B> behaviour.
 
-let s:ready = 1
 fun! scroll#page(up, count)
   if !s:ready | return scroll#accelerate() | endif
   let n = a:count > 1 ? a:count - 1 : ''
@@ -61,7 +61,6 @@ fun! scroll#default(up)
   if a:up | call s:start("scroll#up")
   else    | call s:start("scroll#down")
   endif
-  call scroll#print(1)
   echo "'scroll' reset to" &scroll
 endfun
 
@@ -136,7 +135,7 @@ fun! scroll#up(t)
   " scroll fast, only slow down near the end
   let lns = &scroll
   let smoothness = min([lns, g:scroll_smoothness])
-  let delay_while_fast_scroll = min([smoothness, 10])."m"
+  let delay_while_fast_scroll = max([smoothness, 5])."m"
 
   " scroll fast until scroll_smoothness threshold, smooth a bit every now and then
   for i in range(lns - smoothness)
@@ -185,7 +184,7 @@ fun! scroll#down(t)
   " scroll fast, only slow down near the end
   let lns = &scroll
   let smoothness = min([lns, g:scroll_smoothness])
-  let delay_while_fast_scroll = min([smoothness, 10])."m"
+  let delay_while_fast_scroll = max([smoothness, 5])."m"
 
   " scroll fast until scroll_smoothness threshold, smooth a bit every now and then
   for i in range(lns - smoothness)
@@ -224,6 +223,75 @@ fun! scroll#down(t)
     redraw
   endfor
   exe "normal! ^"
+  return s:reset()
+endfun
+
+"------------------------------------------------------------------------------
+
+fun! scroll#zcr()
+  let lns = winline() - &scrolloff - 1
+  if lns <= 0
+    return
+  endif
+  let smoothness = min([lns, g:scroll_smoothness])
+
+  for i in range(lns - smoothness)
+    if winline() <= &scrolloff
+      return s:reset()
+    endif
+    exe "normal! \<c-e>"
+    if i % s:delay == 0
+      sleep 10m
+      redraw
+    endif
+  endfor
+
+  for i in range(smoothness)
+    if winline() <= &scrolloff
+      return s:reset()
+    endif
+    let time = max([10, i*2])
+    call execute("sleep ".time."m")
+    exe "normal! \<c-e>"
+    redraw
+  endfor
+  return s:reset()
+endfun
+
+"------------------------------------------------------------------------------
+
+fun! scroll#zz()
+  let lns = winheight(0)/2 - winline()
+  if !lns
+    return
+  elseif lns < 0
+    let lns = lns * -1
+    let cmd = "\<c-e>"
+  else
+    let cmd = "\<c-y>"
+  endif
+  let smoothness = min([lns, g:scroll_smoothness])
+
+  for i in range(lns - smoothness)
+    if winline() <= &scrolloff
+      return s:reset()
+    endif
+    exe "normal!" cmd
+    if i % s:delay == 0
+      sleep 10m
+      redraw
+    endif
+  endfor
+
+  for i in range(smoothness)
+    if winline() <= &scrolloff
+      return s:reset()
+    endif
+    let time = max([10, i*2])
+    call execute("sleep ".time."m")
+    exe "normal!" cmd
+    redraw
+  endfor
   return s:reset()
 endfun
 
