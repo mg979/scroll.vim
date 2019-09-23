@@ -31,18 +31,12 @@ nnoremap <Plug>scroll_top        :<c-u>call scroll#zcr()<cr>
 
 if !get(g:, 'scroll_no_mappings', 0)
   " scroll page
-  nmap <silent> <PageUp>     <Plug>scroll_page_up
-  nmap <silent> <PageDown>   <Plug>scroll_page_down
   nmap <silent> <c-b>        <Plug>scroll_page_up
   nmap <silent> <c-f>        <Plug>scroll_page_down
 
   " scroll half
   nmap <silent> <c-u>        <Plug>scroll_half_up
   nmap <silent> <c-d>        <Plug>scroll_half_down
-
-  " with 'g', also reset &scroll
-  nmap <silent> g<C-u>       <Plug>scroll_reset_up
-  nmap <silent> g<C-d>       <Plug>scroll_reset_down
 
   " zz / z<cr>
   nmap <silent> zz           <Plug>scroll_center

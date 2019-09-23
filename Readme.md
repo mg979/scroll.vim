@@ -19,12 +19,10 @@ plugs:
 
 |key|effect|plug|
 |-|-|-|
-|`<C-F>` / `<PageDown>`   |scroll one page up          |`<Plug>scroll_page_down` |
-|`<C-B>` / `<PageUp>`     |,,              down        |`<Plug>scroll_page_up` |
+|`<C-F>`                |scroll one page up          |`<Plug>scroll_page_down` |
+|`<C-B>`                |,,              down        |`<Plug>scroll_page_up` |
 |`<C-U>`                |scroll half-page up         |`<Plug>scroll_half_up` |
 |`<C-D>`                |,,               down       |`<Plug>scroll_half_down` |
-|`g<C-U>`               |reset &scroll to default    |`<Plug>scroll_reset_up` |
-|`g<C-D>`               |,,                          |`<Plug>scroll_reset_down` |
 |`zz`                   |center page                 |`<Plug>scroll_center` |
 |`z<CR>`                |top of page                 |`<Plug>scroll_top` |
 
