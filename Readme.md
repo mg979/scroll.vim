@@ -39,4 +39,3 @@ faster that the last one.
 |*g:smooth_scroll*| 1 | set to 0 to disable smooth scroll |
 |*g:scroll_smoothness*| 5 | higher is smoother (slower), not recommended above 15 |
 |*g:scroll_no_mappings*| 0 | don't set default mappings |
-|*g:scroll_print_current_page*| 0 | print the current page of document after page up/down |

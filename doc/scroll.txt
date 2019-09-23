@@ -62,11 +62,6 @@ Default: 0
 
   Don't set default mappings.
 
-                                                  *g:scroll_print_current_page*
-Default: 0
-
-  Print the current page of document after page up/down.
-
 
 
 
