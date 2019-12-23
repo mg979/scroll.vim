@@ -345,6 +345,6 @@ endfun
 fun! s:reset(...) abort
   let s:delay = s:DELAY
   let s:ready = 1
-  doautocmd CursorHold
+  silent! doautocmd <nomodeline> CursorHold
 endfun
 
